@@ -1,53 +1,204 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
+import os
 
-# Generate sample medical healthcare data for 10 demo patients with at least 3 months of data
-def generate_data():
-    np.random.seed(0)
-    categories = ['Temperature', 'Heart Rate', 'Blood Pressure', 'Respiratory Rate', 'Oxygen Saturation',
-                  'Glucose Level', 'Cholesterol Level', 'BMI', 'Pain Level', 'Exercise Duration']
-    patients = ['Patient ' + str(i) for i in range(1, 11)]
-    data = {'Patient': np.repeat(patients, 90),  # At least 3 months of data for each patient (90 days)
-            'Date': [(datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(90)] * 10,
-            'Category': np.random.choice(categories, 900),
-            'Value': np.random.normal(0, 1, 900)}  # Generating random normal values for demonstration
-    return pd.DataFrame(data)
+# Initialize Streamlit app
+st.set_page_config(page_title="Home Healthcare Checklist")
 
-data = generate_data()
+# UI
+st.title("***Home Healthcare Checklist***")
+st.subheader("Organize, Prioritize, and Manage your tasks effectively!")
 
-# Set page title
-st.title('Medical Healthcare Data Visualization')
+# Local Database
+@st.cache(allow_output_mutation=True)
+def get_local_data():
+    return pd.DataFrame(columns=["Task", "Category", "Due Date", "Priority", "Completed", "Subtasks"])
 
-# Sidebar with options
-patient = st.sidebar.selectbox('Select Patient', sorted(data['Patient'].unique()))
-selected_category = st.sidebar.selectbox('Select Category', sorted(data['Category'].unique()))
+data = get_local_data()
 
-# Filter data based on selected patient and category
-filtered_data = data[(data['Patient'] == patient) & (data['Category'] == selected_category)]
+# Functions for interacting with local data
+def save_local_data():
+    data.to_csv("local_data.csv", index=False)
 
-# Display different charts based on selection
-if st.sidebar.checkbox('Show Data Table'):
-    st.subheader('Data Table')
-    st.write(filtered_data)
+def load_local_data():
+    return pd.read_csv("local_data.csv") if "local_data.csv" in os.listdir() else pd.DataFrame(columns=["Task", "Category", "Due Date", "Priority", "Completed", "Subtasks"])
 
-chart_type = st.sidebar.selectbox('Select Chart Type', ['Line Chart', 'Histogram', 'Box Plot'])
+def add_task(task, category, due_date, priority, completed, subtasks):
+    global data
+    new_task = {"Task": task, "Category": category, "Due Date": due_date, "Priority": priority, "Completed": completed, "Subtasks": subtasks}
+    data = data.append(new_task, ignore_index=True)
+    save_local_data()
 
-if chart_type == 'Line Chart':
-    st.subheader('Line Chart')
-    st.line_chart(filtered_data.set_index('Date')['Value'])
+def edit_task(task_id, updated_task, updated_category, updated_due_date, updated_priority, completed, updated_subtasks):
+    global data
+    task_index = task_id
+    data.at[task_index, "Task"] = updated_task
+    data.at[task_index, "Category"] = updated_category
+    data.at[task_index, "Due Date"] = updated_due_date
+    data.at[task_index, "Priority"] = updated_priority
+    data.at[task_index, "Completed"] = completed
+    data.at[task_index, "Subtasks"] = updated_subtasks
+    save_local_data()
 
-elif chart_type == 'Histogram':
-    st.subheader('Histogram')
-    st.hist(filtered_data['Value'], bins=20)
+def clone_task(task_id):
+    global data
+    task_to_clone = data.iloc[task_id]
+    clone_task = task_to_clone.copy()
+    clone_task["Task"] = f"Copy of {clone_task['Task']}"
+    data = data.append(clone_task, ignore_index=True)
+    save_local_data()
 
-elif chart_type == 'Box Plot':
-    st.subheader('Box Plot')
-    st.box_plot(filtered_data['Value'], vert=False)
+def delete_task(task_id):
+    global data
+    data = data.drop(index=task_id).reset_index(drop=True)
+    save_local_data()
 
-# Additional charts or features can be added here
+# Load data from CSV
+load_local_data()
 
-# Display sample data
-st.subheader('Sample Data')
-st.write(data.head(10))
+# Add example home healthcare tasks with subtasks
+example_tasks = [
+    {
+        "Task": "Medication Management",
+        "Category": "Medical",
+        "Due Date": "2024-06-01",
+        "Priority": "High",
+        "Completed": False,
+        "Subtasks": [
+            "Organize medications by time of day",
+            "Create a medication schedule",
+            "Ensure medications are refilled on time",
+            "Monitor for side effects",
+            "Coordinate with the pharmacy for delivery",
+            "Set reminders for medication times"
+        ]
+    },
+    {
+        "Task": "Patient Hygiene",
+        "Category": "Personal Care",
+        "Due Date": "2024-05-30",
+        "Priority": "Medium",
+        "Completed": False,
+        "Subtasks": [
+            "Assist with bathing",
+            "Help with grooming",
+            "Ensure clean clothes are available",
+            "Change bed linens",
+            "Maintain oral hygiene"
+        ]
+    },
+    {
+        "Task": "Physical Therapy Exercises",
+        "Category": "Rehabilitation",
+        "Due Date": "2024-05-28",
+        "Priority": "High",
+        "Completed": False,
+        "Subtasks": [
+            "Follow the prescribed exercise regimen",
+            "Ensure proper form during exercises",
+            "Record progress and any discomfort",
+            "Schedule regular therapy sessions"
+        ]
+    },
+    {
+        "Task": "Meal Preparation",
+        "Category": "Nutrition",
+        "Due Date": "2024-05-29",
+        "Priority": "Medium",
+        "Completed": False,
+        "Subtasks": [
+            "Plan a weekly menu",
+            "Ensure dietary restrictions are met",
+            "Prepare meals in advance",
+            "Maintain food hygiene",
+            "Assist with feeding if necessary"
+        ]
+    },
+    {
+        "Task": "Monitoring Vital Signs",
+        "Category": "Medical",
+        "Due Date": "2024-06-02",
+        "Priority": "High",
+        "Completed": False,
+        "Subtasks": [
+            "Measure blood pressure",
+            "Check heart rate",
+            "Monitor blood sugar levels",
+            "Track temperature",
+            "Record and report any irregularities"
+        ]
+    },
+    {
+        "Task": "Housekeeping",
+        "Category": "Household",
+        "Due Date": "2024-05-31",
+        "Priority": "Low",
+        "Completed": False,
+        "Subtasks": [
+            "Clean and sanitize living areas",
+            "Do the laundry",
+            "Organize the patient's room",
+            "Dispose of waste properly",
+            "Ensure a safe and clutter-free environment"
+        ]
+    },
+    {
+        "Task": "Transportation to Appointments",
+        "Category": "Logistics",
+        "Due Date": "2024-06-03",
+        "Priority": "Medium",
+        "Completed": False,
+        "Subtasks": [
+            "Schedule transportation in advance",
+            "Assist the patient into the vehicle",
+            "Ensure safety during transit",
+            "Accompany patient to the appointment",
+            "Collect prescriptions or documents if needed"
+        ]
+    },
+    {
+        "Task": "Social Interaction",
+        "Category": "Emotional Support",
+        "Due Date": "2024-05-27",
+        "Priority": "Low",
+        "Completed": False,
+        "Subtasks": [
+            "Schedule regular visits or calls",
+            "Engage in meaningful conversations",
+            "Encourage participation in social activities",
+            "Monitor for signs of depression or anxiety"
+        ]
+    },
+    {
+        "Task": "Medical Equipment Management",
+        "Category": "Logistics",
+        "Due Date": "2024-06-04",
+        "Priority": "Medium",
+        "Completed": False,
+        "Subtasks": [
+            "Ensure all equipment is functioning",
+            "Clean and maintain equipment",
+            "Order supplies as needed",
+            "Provide training on equipment use",
+            "Schedule regular maintenance checks"
+        ]
+    },
+    {
+        "Task": "Care Plan Review",
+        "Category": "Administrative",
+        "Due Date": "2024-06-05",
+        "Priority": "High",
+        "Completed": False,
+        "Subtasks": [
+            "Review the current care plan with healthcare providers",
+            "Update the plan based on patient progress",
+            "Discuss changes with the patient and family",
+            "Document all updates and changes"
+        ]
+    }
+]
+
+# Adding example tasks to the local data
+for task in example_tasks:
+    add_task(task["Task"], task["Category"], task["Due Date"], task["Priority"], task["Completed"], task["Subtasks"])
