@@ -5,13 +5,12 @@ import numpy as np
 # Generate sample medical healthcare data
 def generate_data():
     np.random.seed(0)
-    categories = ['A', 'B', 'C', 'D', 'E']
-    years = np.arange(2010, 2020)
-    data = {'Category': np.random.choice(categories, 100),
-            'Year': np.random.choice(years, 100),
-            'Value': np.random.randint(1, 100, 100),
-            'Age': np.random.randint(20, 80, 100),
-            'Gender': np.random.choice(['Male', 'Female'], 100)}
+    categories = ['Temperature', 'Heart Rate', 'Blood Pressure', 'Respiratory Rate', 'Oxygen Saturation',
+                  'Glucose Level', 'Cholesterol Level', 'BMI', 'Pain Level', 'Exercise Duration']
+    patients = np.arange(1, 101)
+    data = {'Patient': np.random.choice(patients, 1000),
+            'Category': np.random.choice(categories, 1000),
+            'Value': np.random.normal(0, 1, 1000)}  # Generating random normal values for demonstration
     return pd.DataFrame(data)
 
 data = generate_data()
@@ -20,28 +19,26 @@ data = generate_data()
 st.title('Medical Healthcare Data Visualization')
 
 # Sidebar with options
-chart_type = st.sidebar.selectbox('Select Chart Type', ['Bar Chart', 'Line Chart', 'Scatter Plot', 'Pie Chart'])
+chart_type = st.sidebar.selectbox('Select Chart Type', ['Line Chart', 'Histogram', 'Box Plot'])
 
 # Display different charts based on selection
-if chart_type == 'Bar Chart':
-    st.subheader('Bar Chart')
-    bar_data = data.groupby('Category')['Value'].mean().reset_index()
-    st.bar_chart(bar_data.set_index('Category'))
-
-elif chart_type == 'Line Chart':
+if chart_type == 'Line Chart':
     st.subheader('Line Chart')
-    line_data = data.groupby('Year')['Value'].sum().reset_index()
-    st.line_chart(line_data.set_index('Year'))
+    selected_category = st.selectbox('Select Category', sorted(data['Category'].unique()))
+    line_data = data[data['Category'] == selected_category]
+    st.line_chart(line_data.groupby('Patient')['Value'].mean())
 
-elif chart_type == 'Scatter Plot':
-    st.subheader('Scatter Plot')
-    scatter_data = data.sample(100)
-    st.scatter_chart(scatter_data, x='Value', y='Age', color='Gender')
+elif chart_type == 'Histogram':
+    st.subheader('Histogram')
+    selected_category = st.selectbox('Select Category', sorted(data['Category'].unique()))
+    hist_data = data[data['Category'] == selected_category]['Value']
+    st.hist(hist_data, bins=20)
 
-elif chart_type == 'Pie Chart':
-    st.subheader('Pie Chart')
-    pie_data = data['Gender'].value_counts().reset_index()
-    st.pie_chart(pie_data.set_index('index'))
+elif chart_type == 'Box Plot':
+    st.subheader('Box Plot')
+    selected_category = st.selectbox('Select Category', sorted(data['Category'].unique()))
+    box_data = data[data['Category'] == selected_category]
+    st.box_plot(box_data['Value'], vert=False)
 
 # Additional charts can be added here
 
