@@ -1,6 +1,6 @@
 streamlit
 pandas
 sqlalchemy
-plotly==5.3.1
+plotly
 pandas
 numpy
