@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 
 # Generate sample medical healthcare data
 def generate_data():
@@ -27,40 +26,26 @@ chart_type = st.sidebar.selectbox('Select Chart Type', ['Bar Chart', 'Line Chart
 if chart_type == 'Bar Chart':
     st.subheader('Bar Chart')
     bar_data = data.groupby('Category')['Value'].mean().reset_index()
-    plt.bar(bar_data['Category'], bar_data['Value'])
-    plt.xlabel('Category')
-    plt.ylabel('Average Value')
-    plt.title('Average Value by Category')
-    st.pyplot()
+    st.bar_chart(bar_data.set_index('Category'))
 
 elif chart_type == 'Line Chart':
     st.subheader('Line Chart')
     line_data = data.groupby('Year')['Value'].sum().reset_index()
-    plt.plot(line_data['Year'], line_data['Value'])
-    plt.xlabel('Year')
-    plt.ylabel('Total Value')
-    plt.title('Total Value by Year')
-    st.pyplot()
+    st.line_chart(line_data.set_index('Year'))
 
 elif chart_type == 'Scatter Plot':
     st.subheader('Scatter Plot')
     scatter_data = data.sample(100)
-    plt.scatter(scatter_data['Value'], scatter_data['Age'], c=scatter_data['Gender'] == 'Female')
-    plt.xlabel('Value')
-    plt.ylabel('Age')
-    plt.title('Scatter Plot of Value vs Age')
-    plt.legend(['Male', 'Female'])
-    st.pyplot()
+    st.scatter_chart(scatter_data, x='Value', y='Age', color='Gender')
 
 elif chart_type == 'Pie Chart':
     st.subheader('Pie Chart')
     pie_data = data['Gender'].value_counts().reset_index()
-    plt.pie(pie_data['Gender'], labels=pie_data['index'], autopct='%1.1f%%')
-    plt.title('Distribution of Gender')
-    st.pyplot()
+    st.pie_chart(pie_data.set_index('index'))
 
 # Additional charts can be added here
 
 # Display sample data
 st.subheader('Sample Data')
 st.write(data.head(10))
+
